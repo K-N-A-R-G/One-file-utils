@@ -1,4 +1,4 @@
-# micro_git.py
+#!/usr/bin/env python
 
 import subprocess
 import os
@@ -105,6 +105,25 @@ def git_show():
     while True:
         if (input()) == 'q':
             break
+
+
+def git_restore():
+    print('\n\033[1;36mFiles from last commit:\033[0m\n')
+    subprocess.call("git diff --name-only HEAD", shell=True)
+
+    a = input('\nName to restore or <Enter>\
+     to \033[1;7;36mrestore all\033[0m, \"q\" = back\n')
+
+    if a == "q":
+        return
+    if a == '':
+        a = '.'
+
+    comm = f"git restore {a}"
+    print(comm)
+    subprocess.call(comm, shell=True)
+    print('\no\'k\n')
+    input('Press <Enter>')
 
 
 def git_batch_action():
@@ -231,6 +250,7 @@ menu = {
  'b': ['batch action', git_batch_action],
  'c': ['commit', git_commit],
  'i': ['init', git_init],
+ 'r': ['restore', git_restore],
  's': ['show', git_show],
  'st': ['status', git_status],
  'q': ['quit', exit]}

@@ -71,6 +71,7 @@ The script will display a list of changed files with numbers
 
 **`halt`** is a lightweight utility module for measuring the execution time of a function, either by using it as a **decorator** or by calling it **explicitly**. It also provides introspection on the parameters and arguments passed to the function.
 
+![example](images/halt.png)
 ---
 
 ## Features
