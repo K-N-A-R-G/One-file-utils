@@ -163,20 +163,21 @@ print(adder(13, 22) / adder(0.3, 3.3))
 ```
 ---
 # make_tree
-## Directory Tree Generator
 
-A simple Python script to generate a directory tree structure
-for a specified folder, printing it to the terminal and/or saving
-to a text file.
+## Directory Tree Generator & Comparator
+
+`make_tree.py` is a small command-line tool and interactive script that generates a visual tree of any folder structure. It can save the result to a text file and compare it with other saved snapshots or the current state of the filesystem.
 
 ---
 
 ## Features
 
-- Recursively lists all files and folders, including hidden ones
-- Outputs a classic tree structure with `├──`, `│`, and `└──` characters
-- Interactive mode for choosing folder and output file
-- Command-line options to control input folder, output file, and verbosity
+- Generates a clean directory tree with files and subfolders
+- Supports both command-line and interactive modes
+- Optionally includes hidden files and folders
+- Saves output to a file (default: `tree.txt`) or skips saving entirely
+- Compares current tree with a saved file or compares two saved trees
+- Highlights changes in comparison (green = added, blue = removed)
 
 ---
 
@@ -184,4 +185,5 @@ to a text file.
 
 ```bash
 python3 make_tree.py [options] [folder]
+
 ```
