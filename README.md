@@ -4,6 +4,7 @@
 ### _Table of contains_:
 - [_micro-git_](#micro-git)
 - [_halt_](#halt)
+- [_make_tree_](#make_tree)
 ---
 
 # micro-git
@@ -159,4 +160,28 @@ def adder(
 
 
 print(adder(13, 22) / adder(0.3, 3.3))
+```
+---
+# make_tree
+## Directory Tree Generator
+
+A simple Python script to generate a directory tree structure
+for a specified folder, printing it to the terminal and/or saving
+to a text file.
+
+---
+
+## Features
+
+- Recursively lists all files and folders, including hidden ones
+- Outputs a classic tree structure with `├──`, `│`, and `└──` characters
+- Interactive mode for choosing folder and output file
+- Command-line options to control input folder, output file, and verbosity
+
+---
+
+## Usage
+
+```bash
+python3 make_tree.py [options] [folder]
 ```
