@@ -37,11 +37,17 @@ Note:
   In silent mode (-s), specifying an output file (-o) is mandatory;
   otherwise the script will exit with an error.
 """
-import os
 import argparse
+import os
+import sys
 
-def tree(dir_path: str, prefix: str = "") -> list[str]:
-    entries = sorted(os.listdir(dir_path))
+def tree(
+         dir_path: str,
+         prefix: str = "",
+         show_hidden: bool = False
+         ) -> list[str]:
+    entries = sorted(e for e in os.listdir(dir_path)
+    if show_hidden or not e.startswith("."))
     lines = []
     entries_count = len(entries)
     for i, entry in enumerate(entries):
@@ -54,16 +60,18 @@ def tree(dir_path: str, prefix: str = "") -> list[str]:
     return lines
 
 def interactive_mode():
-    folder = input(f"Choose folder (default current): ").strip() or os.getcwd()
+    folder = input("Choose folder (default: current): ").strip() or os.getcwd()
     if not os.path.isdir(folder):
         print("Invalid folder path.")
         return
-    file_out = input("Filename for output (empty = no save, default 'tree.txt'): ").strip()
+    file_out = input(
+    "Filename for output (empty = no save, 'd' = default 'tree.txt'): ").strip()
     if file_out == "":
         file_out = None
-    elif file_out is None:
+    elif file_out == "d":
         file_out = "tree.txt"
-    return folder, file_out
+    show_hidden = input("Show hidden files/folders? (y/N): ").strip().lower() == "y"
+    return folder, file_out, show_hidden
 
 def main():
     parser = argparse.ArgumentParser(description="Directory tree script")
@@ -71,39 +79,55 @@ def main():
                         help="Run script in interactive mode")
     parser.add_argument("-s", "--silent", action="store_true",
                         help="Do not print tree to terminal")
-    parser.add_argument("-o", "--output", type=str, default="tree.txt",
-                        help="Output filename (default: tree.txt)")
+    parser.add_argument(
+    "-o", "--output", nargs="?", const="tree.txt",
+    help="Save output to file (default: tree.txt). Use 'none' to disable saving."
+    )
+    parser.add_argument("--show-hidden", action="store_true",
+                        help="Include hidden files and directories")
     parser.add_argument("folder", nargs="?", default=os.getcwd(),
                         help="Root folder to build tree from (default: current directory)")
 
-    args = parser.parse_args()
+    if len(sys.argv) == 1:
+        print("[Info] No arguments provided. Entering interactive mode.\n")
+        args = parser.parse_args(["--interactive"])
+    else:
+        args = parser.parse_args()
 
     if args.interactive:
         result = interactive_mode()
         if not result:
             return
-        folder, file_out = result
+        folder, file_out, show_hidden = result
         silent = False
     else:
         folder = args.folder
         silent = args.silent
-        # если silent, файл обязателен, если не указан, дефолт "tree.txt"
-        file_out = args.output if not silent or args.output else None
+        show_hidden = args.show_hidden
+
+        # interpret `-o` option
+        if args.output == "none":
+            file_out = None
+        elif args.output is not None:
+            file_out = args.output  # either filename or default 'tree.txt'
+        else:
+            file_out = None  # no output unless explicitly set
+
         if silent and not file_out:
-            print("Silent mode requires output file specified with -o")
+            print("Error: Silent mode requires output file (-o or default)")
             return
 
     root_name = os.path.basename(folder) or folder
-    lines = tree(folder)
+    lines = tree(folder, show_hidden=show_hidden)
 
     if not silent:
-        print(root_name + "/")
+        print(root_name + os.sep)
         for line in lines:
             print(line)
 
     if file_out:
         with open(file_out, "w", encoding="utf-8") as f:
-            f.write(root_name + "/\n")
+            f.write(f"{root_name}{os.sep}\n")
             f.write("\n".join(lines))
             f.write("\n")
         if not silent:
