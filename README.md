@@ -4,7 +4,7 @@
 ### _Table of contains_:
 - [_micro-git_](#micro-git)
 - [_halt_](#halt)
-- [_make_tree_](#make_tree)
+- [_make-tree_](#make_tree)
 ---
 
 # micro-git
@@ -162,7 +162,7 @@ def adder(
 print(adder(13, 22) / adder(0.3, 3.3))
 ```
 ---
-# make_tree.py
+# make_tree
 
 ## Directory Tree Generator & Comparator
 
