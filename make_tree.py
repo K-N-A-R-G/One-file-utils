@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Directory Tree Generator
+Directory Tree Generator with Ignore List Support
 
 This script generates a directory tree of the specified folder,
 printing the structure to the terminal and/or saving it to a file.
+
+It supports ignoring specified directories by name, either by
+providing them at runtime or loading/saving them from/to a .treeignore file
+located in the root folder.
 
 Usage:
 
@@ -36,19 +40,31 @@ Examples:
 Note:
   In silent mode (-s), specifying an output file (-o) is mandatory;
   otherwise the script will exit with an error.
+
+Additional features:
+  - Supports directory ignore list via .treeignore file in root folder.
+  - On startup, if .treeignore exists, allows using it, ignoring it,
+    or creating a new ignore list.
+  - Allows specifying ignore directories interactively if no .treeignore found.
 """
+
 import argparse
 import difflib
 import os
 import sys
 
+
 def tree(
          dir_path: str,
          prefix: str = "",
-         show_hidden: bool = False
+         show_hidden: bool = False,
+         ignore_names: set[str] = None
          ) -> list[str]:
+    if ignore_names is None:
+        ignore_names = set()
     entries = sorted(e for e in os.listdir(dir_path)
-    if show_hidden or not e.startswith("."))
+                     if (show_hidden or not e.startswith("."))
+                     and e not in ignore_names)
     lines = []
     entries_count = len(entries)
     for i, entry in enumerate(entries):
@@ -57,7 +73,7 @@ def tree(
         lines.append(prefix + connector + entry)
         if os.path.isdir(path):
             extension = "    " if i == entries_count - 1 else "│   "
-            lines.extend(tree(path, prefix + extension))
+            lines.extend(tree(path, prefix + extension, show_hidden, ignore_names))
     return lines
 
 
@@ -135,6 +151,60 @@ def interactive_mode():
             print("Invalid option.")
 
 
+def load_treeignore(root_folder: str) -> set[str] | None:
+    path = os.path.join(root_folder, ".treeignore")
+    if not os.path.isfile(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+    return set(lines)
+
+
+def save_treeignore(root_folder: str, ignore_list: list[str]):
+    path = os.path.join(root_folder, ".treeignore")
+    # добавляем '.treeignore' в список, если его нет
+    if ".treeignore" not in ignore_list:
+        ignore_list = ignore_list + [".treeignore"]
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("# Files and directories to ignore, one per line\n")
+        for d in ignore_list:
+            f.write(d + "\n")
+
+
+def prompt_ignore_list(root_folder: str) -> set[str]:
+    existing_ignore = load_treeignore(root_folder)
+    if existing_ignore is not None:
+        print(f"Found .treeignore in {root_folder} with exclusions:")
+        for d in existing_ignore:
+            print(f"  {d}")
+        print("Choose: 1 - use these exclusions and continue")
+        print("        2 - ignore .treeignore and continue without exclusions")
+        print("        3 - create new exclusions list")
+        while True:
+            choice = input("Your choice [1/2/3]: ").strip()
+            if choice == "1":
+                return existing_ignore
+            elif choice == "2":
+                return set()
+            elif choice == "3":
+                break
+            else:
+                print("Invalid input")
+    else:
+        print(f"No .treeignore found in {root_folder}.")
+
+    # Create new list
+    ignore_input = input("Enter space-separated files/directories to ignore (empty = none): ").strip()
+    if ignore_input:
+        ignore_names = set(ignore_input.split())
+        save = input("Save these exclusions to .treeignore? (y/N): ").strip().lower()
+        if save == "y":
+            save_treeignore(root_folder, sorted(ignore_names))
+            print(".treeignore saved.")
+        return ignore_names
+    return set()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Directory tree script")
     parser.add_argument("-i", "--interactive", action="store_true",
@@ -142,8 +212,8 @@ def main():
     parser.add_argument("-s", "--silent", action="store_true",
                         help="Do not print tree to terminal")
     parser.add_argument(
-    "-o", "--output", nargs="?", const="tree.txt",
-    help="Save output to file (default: tree.txt). Use 'none' to disable saving."
+        "-o", "--output", nargs="?", const="tree.txt",
+        help="Save output to file (default: tree.txt). Use 'none' to disable saving."
     )
     parser.add_argument("--show-hidden", action="store_true",
                         help="Include hidden files and directories")
@@ -155,6 +225,12 @@ def main():
             "Compare saved trees: one file (vs current directory) or two files. "
             "Differences will be printed in color. Hidden files respected only if --show-hidden is set."
         )
+    )
+    parser.add_argument(
+    "--ignore",
+    action="store_true",
+    help="Automatically use .treeignore file if present in the root folder,\
+     without prompting"
     )
 
     if len(sys.argv) == 1:
@@ -190,8 +266,6 @@ def main():
             print("Error: --compare requires one or two file paths.")
         return
 
-
-
     if args.interactive:
         result = interactive_mode()
         if not result:
@@ -216,7 +290,14 @@ def main():
             return
 
     root_name = os.path.basename(folder) or folder
-    lines = tree(folder, show_hidden=show_hidden)
+
+    if args.ignore:
+        ignore_names = load_treeignore(folder)
+        if ignore_names is None:
+            ignore_names = set()
+    else:
+        ignore_names = prompt_ignore_list(folder)
+    lines = tree(folder, show_hidden=show_hidden, ignore_names=ignore_names)
 
     if not silent:
         print(root_name + os.sep)
@@ -231,6 +312,6 @@ def main():
         if not silent:
             print(f"\nSaved tree to {file_out}")
 
+
 if __name__ == "__main__":
     main()
-

@@ -162,11 +162,13 @@ def adder(
 print(adder(13, 22) / adder(0.3, 3.3))
 ```
 ---
-# make_tree
+# make_tree.py
 
 ## Directory Tree Generator & Comparator
 
 `make_tree.py` is a small command-line tool and interactive script that generates a visual tree of any folder structure. It can save the result to a text file and compare it with other saved snapshots or the current state of the filesystem.
+
+**_New feature:_** ignore specified files and folders by name, via a list entered manually or loaded/saved from a .treeignore file in the root directory.
 
 ---
 
@@ -174,6 +176,8 @@ print(adder(13, 22) / adder(0.3, 3.3))
 
 - Generates a clean directory tree with files and subfolders
 - Supports both command-line and interactive modes
+- Supports ignoring specified files and directories by name
+- Loads and saves ignore lists in a .treeignore file
 - Optionally includes hidden files and folders
 - Saves output to a file (default: `tree.txt`) or skips saving entirely
 - Compares current tree with a saved file or compares two saved trees
@@ -187,3 +191,12 @@ print(adder(13, 22) / adder(0.3, 3.3))
 python3 make_tree.py [options] [folder]
 
 ```
+---
+**Ignore List (.treeignore)**
+- If a .treeignore file exists in the root folder, the script prompts to use its exclusions, ignore the file, or create a new ignore list.
+
+- You can enter space-separated names of files and directories to ignore.
+
+- When saved to .treeignore, the file itself is automatically added to the ignore list to avoid including it in the tree.
+
+- Ignored entries are excluded from the output and tree traversal.
