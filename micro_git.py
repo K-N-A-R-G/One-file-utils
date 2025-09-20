@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import subprocess
 import os
 import sys
@@ -18,6 +16,7 @@ def get_script_dir(follow_symlinks=True):
     if follow_symlinks:
         path = os.path.realpath(path)
     return os.path.dirname(path)
+
 
 def git_add():
     a = input('\nName to add or <Enter>\
@@ -43,7 +42,7 @@ def git_commit():
         input('Press <Enter>')
 
 
-def git_batch_add_commit():
+def git_batch_add():
     # Get list of changed files using git status --porcelain
     proc = subprocess.Popen(['git', 'status', '--porcelain'], stdout=subprocess.PIPE, text=True)
     output, _ = proc.communicate()
@@ -96,7 +95,7 @@ def git_batch_add_commit():
             subprocess.call(['git', 'add', f])
 
         break
-    git_commit()
+    #  git_commit()
 
 
 def git_show():
@@ -107,52 +106,87 @@ def git_show():
             break
 
 
-def git_restore():
-    print('\n\033[1;36mFiles from last commit:\033[0m\n')
-    subprocess.call("git diff --name-only HEAD", shell=True)
+def git_restore_menu():
+    while True:
+        mode = input('Restore from (w)orking tree or (s)taged? "q" = back\n').lower()
+        if mode == 'q':
+            return
+        if mode in ('w', 's'):
+            break
+        print("Invalid choice, please enter 'w', 's', or 'q'.")
 
-    a = input('\nName to restore or <Enter>\
-     to \033[1;7;36mrestore all\033[0m, \"q\" = back\n')
+    if mode == 'w':
+        print('\n\033[1;36mFiles from last commit:\033[0m\n')
+        subprocess.call("git diff --name-only HEAD", shell=True)
+        restore_cmd = "git restore"
+        prompt_text = 'Name to restore or <Enter> to \033[1;7;36mrestore all\033[0m, "q" = back\n'
+    else:
+        print('\n\033[1;36mStaged files (added to index):\033[0m\n')
+        subprocess.call("git diff --cached --name-only", shell=True)
+        restore_cmd = "git restore --staged"
+        prompt_text = 'Name to unstage or <Enter> to \033[1;7;36munstage all\033[0m, "q" = back\n'
 
-    if a == "q":
-        return
-    if a == '':
-        a = '.'
+    while True:
+        a = input(prompt_text)
+        if a == 'q':
+            return
+        if a == '':
+            a = '.'
+        break
 
-    comm = f"git restore {a}"
+    comm = f"{restore_cmd} {a}"
     print(comm)
     subprocess.call(comm, shell=True)
-    print('\no\'k\n')
+    print("\no'k\n")
     input('Press <Enter>')
 
 
 def git_batch_action():
     """
-    action: str, either 'add' or 'restore'
+    Unified batch action for add or restore (including staged restore)
     """
-    actions = {
-    'ba': 'add',
-    'br': 'restore'
-     }
-    action = actions.get(input('\nba - batch add & commit\
-    br - batch restore\n '))
-
-    if not action:
-        print("Invalid action.")
-        return
-
-    proc = subprocess.Popen(['git', 'status', '--porcelain'],
-     stdout=subprocess.PIPE, text=True)
-    output, _ = proc.communicate()
-
-    if not output.strip():
-        input(f'\nNo changes to {action}.\nPress Enter')
-        return
+    actions = {'ba': 'add', 'br': 'restore'}
+    while True:
+        choice = input('\nba - batch add\nbr - batch restore\nq - back\n ').lower()
+        if choice == 'q':
+            return
+        if choice in actions:
+            action = actions[choice]
+            break
+        print("Invalid choice, try again.")
 
     files = []
-    for line in output.splitlines():
-        filepath = line[3:]
-        files.append(filepath)
+    if action == 'add':
+        proc = subprocess.Popen(['git', 'status', '--porcelain'], stdout=subprocess.PIPE, text=True)
+        output, _ = proc.communicate()
+        if not output.strip():
+            input(f'\nNo changes to {action}.\nPress Enter')
+            return
+        for line in output.splitlines():
+            files.append(line[3:])
+
+    elif action == 'restore':
+        # choose restore type
+        while True:
+            mode = input('Restore from (w)orking tree or (s)taged? "q" = back\n').lower()
+            if mode == 'q':
+                return
+            if mode in ('w', 's'):
+                break
+            print("Invalid choice, please enter 'w', 's', or 'q'.")
+
+        if mode == 'w':
+            proc = subprocess.Popen(['git', 'diff', '--name-only', 'HEAD'], stdout=subprocess.PIPE, text=True)
+            restore_cmd = 'git restore'
+        else:
+            proc = subprocess.Popen(['git', 'diff', '--cached', '--name-only'], stdout=subprocess.PIPE, text=True)
+            restore_cmd = 'git restore --staged'
+
+        output, _ = proc.communicate()
+        files = output.splitlines()
+        if not files:
+            input(f'\nNo files to restore.\nPress Enter')
+            return
 
     def print_files_in_columns(files, cols=3):
         n = len(files)
@@ -169,9 +203,7 @@ def git_batch_action():
 
     print(f"\nChanged files:")
     print_files_in_columns(files, cols=3)
-
-    print(f'\nEnter file numbers separated by space to {action},\
-     or "q" to cancel:')
+    print(f'\nEnter file numbers separated by space to {action}, or "q" to cancel:')
 
     while True:
         s = input('Selection: ').strip()
@@ -180,39 +212,33 @@ def git_batch_action():
         if not s:
             print("Empty input, please try again.")
             continue
-
         try:
             indices = [int(x) for x in s.split()]
         except ValueError:
             print("Invalid input, please enter numbers separated by spaces.")
             continue
-
         if any(i < 1 or i > len(files) for i in indices):
             print("Some numbers are out of range, please try again.")
             continue
-
         chosen_files = sorted(set(files[i - 1] for i in indices))
-
-        print(f"\n{action.capitalize()}ing files:")
-        for f in chosen_files:
-            print(f"  {f}")
-            subprocess.call(['git', action, f])
-
         break
 
-    # If action was add, ask for commit message and commit
     if action == 'add':
-        msg = input('\nEnter commit message (empty to cancel): ').strip()
-        if not msg:
+        for f in chosen_files:
+            subprocess.call(['git', 'add', f])
+        msg = input('\nFile(s) added\nEnter commit message (empty to cancel): ').strip()
+        if msg:
+            subprocess.call(['git', 'commit', '-m', msg])
+            print("\nCommit created.")
+        else:
             print("Commit cancelled.")
-            input('Press <Enter>')
-            return
-        subprocess.call(['git', 'commit', '-m', msg])
-        print("\nCommit created.")
-        input('Press <Enter>')
     else:
-        print("\nAction completed.")
-        input('Press <Enter>')
+        for f in chosen_files:
+            subprocess.call(restore_cmd.split() + [f])
+        print("\nRestore completed.")
+
+    input('Press <Enter>')
+
 
 
 def git_status():
@@ -250,7 +276,7 @@ menu = {
  'b': ['batch action', git_batch_action],
  'c': ['commit', git_commit],
  'i': ['init', git_init],
- 'r': ['restore', git_restore],
+ 'r': ['restore/unsatge', git_restore_menu],
  's': ['show', git_show],
  'st': ['status', git_status],
  'q': ['quit', exit]}
