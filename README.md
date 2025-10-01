@@ -5,6 +5,7 @@
 - [_micro-git_](#micro-git)
 - [_halt_](#halt)
 - [_make-tree_](#make_tree)
+- [_devmenu_](#devmenu)
 ---
 
 # micro-git
@@ -200,3 +201,77 @@ python3 make_tree.py [options] [folder]
 - When saved to .treeignore, the file itself is automatically added to the ignore list to avoid including it in the tree.
 
 - Ignored entries are excluded from the output and tree traversal.
+
+# devmenu
+
+`DevMenu` is a lightweight, universal CLI interactive menu system for running functions with arguments.
+Ideal for developer utilities, test consoles, and interactive tools.
+
+---
+
+## Features
+
+- Create menu from a dictionary like:
+
+```python
+{
+    "1": ("Item description", function, args, kwargs),
+    "2": ("Another item", another_function, (), {})
+}
+```
+
+- Calls functions with arguments when selected.
+
+- Temporarily hides the menu while the function runs.
+
+- Returns to the menu after function completion or exception.
+
+- Logs the last messages directly in the menu (console output).
+
+## Usage
+
+```python
+from devmenu import DevMenu
+
+def greet(name: str):
+    print(f"Hello, {name}!")
+
+def add(a, b):
+    print(f"{a} + {b} = {a + b}")
+
+actions = {
+    "1": ("Say Hello", greet, ("Alice",), {}),
+    "2": ("Add numbers", add, (3, 5), {}),
+}
+
+menu = DevMenu(actions, title="My Dev Menu")
+menu.run()
+```
+
+- Selecting a menu item runs the function.
+
+- Exceptions are caught and printed without breaking the menu.
+
+- Quit the menu by pressing q.
+
+## API
+
+| Method                                                 | Description                                                                                     |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `__init__(actions, title="Dev Menu", message_lines=5)` | Initializes the menu. `actions` is a dict mapping keys to (description, function, args, kwargs) |
+| `run()`                                                | Runs the menu main loop                                                                         |
+| `show_menu()`                                          | Displays the current menu and last messages                                                     |
+| `run_action(fnc, args=(), kwargs={})`                  | Runs the function in "full screen" mode                                                         |
+| `log(msg)`                                             | Adds a message to the log and displays it at the bottom of the menu                             |
+
+## Example Output
+
+```
+=== My Dev Menu ===
+1) Say Hello
+2) Add numbers
+q) Quit
+
+--- Messages ---
+No messages yet
+```
