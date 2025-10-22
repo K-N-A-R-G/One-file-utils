@@ -413,7 +413,7 @@ def autostage_gitchosen():
     count = len(affected)
     print(f"\n\033[33m{count} changed file(s) from .gitchosen detected.\033[0m")
 
-    ans = input("Add them now? [y/N/\033[1mv\033[22miew] ").strip().lower()
+    ans = input("Add them now? [y/N/\033[1mv\033[2miew] ").strip().lower()
     if ans == "v":
         print("\n\033[36mAffected files:\033[0m")
         for i, f in enumerate(affected, 1):
