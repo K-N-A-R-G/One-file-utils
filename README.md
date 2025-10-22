@@ -18,7 +18,8 @@ It’s perfect for local use in projects with frequent commits.
 ![expample](images/micro_git_1.png)
 ![expample](images/micro_git_2.png)
 ![expample](images/micro_git_3.png)
-
+![expample](images/micro_git_4.jpg)
+![expample](images/micro_git_5.jpg)
 ---
 
 ## Key Features
