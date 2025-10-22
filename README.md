@@ -24,12 +24,29 @@ It’s perfect for local use in projects with frequent commits.
 ## Key Features
 
 - Automatically detects the script’s own location and the current working directory
-- Auto-detects `.git` folder in the current directory
+- Auto-detects .git folder in the current directory
 - Add individual files or all at once
 - Batch add and commit selected files
-- View Git status and recent changes (`git status`, `git show`)
+- View Git status and recent changes (git status, git show)
 - Navigate directories from the menu
 - Initialize a new Git repository
+- **Manage custom file lists** via `.gitchosen` — create and edit a list of “favorite” files for batch operations and auto-stage commits
+
+`.gitchosen` Feature
+
+A simple but powerful extension that acts as the reverse of `.gitignore`:
+instead of excluding files, it defines a set of files that you frequently work with.
+
+- Manage your list interactively from the menu `(ch)`
+- Quickly toggle selected files with color-highlighted updates
+- The list is stored in `.gitchosen` (plain text) and reused in batch actions
+- When you start the tool, it automatically detects modified files from .gitchosen and offers to:
+  - view the list `(v)`
+  - add & commit them immediately `(y)`
+  - or skip the action `(n)`
+
+This makes the workflow nearly automatic:
+if any “favorite” file changes, `micro-git` will notice and offer to stage and commit it as soon as you launch the script.
 
 **Unique feature:**
 The script detects its own location intentionally so that this single small file can be moved or copied into any project folder and run right from there — no need to `cd` into the directory first, saving you time and effort.
