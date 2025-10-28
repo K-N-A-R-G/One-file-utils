@@ -2,7 +2,6 @@ import subprocess
 import os
 import sys
 import inspect
-import shutil
 import time
 
 space = os.getcwd()
@@ -324,7 +323,7 @@ def git_choose():
 
     while True:
         clear_screen()
-        print(f"\033[1;36mInteractive chooser (.gitchosen)\033[0m\n")
+        print("\033[1;36mInteractive chooser (.gitchosen)\033[0m\n")
         for i, f in enumerate(files, 1):
             mark = "\033[32m✓\033[0m" if f in chosen else " "
             print(f"{i:3}: [{mark}] {f}")

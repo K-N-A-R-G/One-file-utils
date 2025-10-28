@@ -51,7 +51,11 @@ Additional features:
 import argparse
 import difflib
 import os
+import subprocess
 import sys
+
+
+EDIT = False
 
 
 def tree(
@@ -180,6 +184,9 @@ def prompt_ignore_list(root_folder: str) -> set[str]:
         print("Choose: 1 - use these exclusions and continue")
         print("        2 - ignore .treeignore and continue without exclusions")
         print("        3 - create new exclusions list")
+        if os.name == "posix":
+            EDIT=True
+            print("        4 - Edit current .treeignore")
         while True:
             choice = input("Your choice [1/2/3]: ").strip()
             if choice == "1":
@@ -188,6 +195,10 @@ def prompt_ignore_list(root_folder: str) -> set[str]:
                 return set()
             elif choice == "3":
                 break
+            elif choice == "4" and EDIT:
+                editor = os.environ.get("EDITOR")
+                subprocess.call([editor, os.path.join(root_folder, ".treeignore")])
+                existing_ignore = load_treeignore(root_folder)
             else:
                 print("Invalid input")
     else:
