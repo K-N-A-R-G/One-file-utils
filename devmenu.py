@@ -1,3 +1,4 @@
+from collections import deque
 from typing import Dict, Tuple, List, Any, Callable
 
 import traceback
@@ -66,16 +67,14 @@ class DevMenu:
     """
     def __init__(
         self,
-        actions: Dict[
-         str, Tuple[Callable[..., Any], Tuple[Any, ...], Dict[Any, Any]]
-        ],
+        actions: ActionDict,
         title: str = "Dev Menu",
         message_lines: int = 5
     ):
         self.actions = actions
         self.title = title
         self.message_lines = message_lines
-        self.messages: List[str] = []
+        self.messages: deque[str] = deque(maxlen=message_lines)
 
     def show_menu(self) -> None:
         print(f"{CURSOR_HOME}{CLEAR_SCREEN}", end="")
@@ -85,20 +84,19 @@ class DevMenu:
         print(f"{CYAN}q) Quit{RESET}")
         print("\n--- Messages ---")
         # show last message_lines messages
-        for msg in self.messages[-self.message_lines:]:
+        for msg in self.messages:
             print(msg)
-        for _ in range(self.message_lines - len(self.messages[-self.message_lines:])):
+        for _ in range(self.message_lines - len(self.messages)):
             print()
 
     def log(self, msg: str) -> None:
         self.messages.append(str(msg))
-        msgs_to_show = self.messages[-self.message_lines:]
-        menu_height = len(self.actions) + 3  # title + q + "--- Messages ---"
+        menu_height = len(self.actions) + 5  # title + q + "--- Messages ---"
         print(f"\033[{menu_height}H", end="")
-        for line in self.messages[-self.message_lines:]:
-            print(f"{line}\033[K")
-        for _ in range(self.message_lines - len(msgs_to_show)):
-            print("\033[K")
+        for i, line in enumerate(self.messages):
+            print(f"\033[{menu_height + i}H{line}\033[K", end="")
+        for i in range(len(self.messages), self.message_lines):
+            print(f"\033[{menu_height+ i}H\033[K", end="")
 
     def run_action(
      self,
