@@ -1,5 +1,6 @@
 from collections import deque
-from typing import Dict, Tuple, List, Any, Callable
+from pathlib import Path
+from typing import Tuple, Dict, List, Any, Optional, Callable, Union
 
 import traceback
 
@@ -15,6 +16,8 @@ CYAN = "\033[36m"
 CLEAR_SCREEN = "\033[2J"
 CURSOR_HOME = "\033[H"
 
+MenuNode = Tuple[str, Callable[..., Any], Tuple[Any, ...], Dict[Any, Any]]
+ActionDict = Dict[str, MenuNode]
 
 class DevMenu:
     """
@@ -46,7 +49,7 @@ class DevMenu:
         menu.run()
 
     Methods:
-        __init__(actions: dict, title: str = "Dev Menu", message_lines: int = 5):
+        __init__(actions: dict, title: str = "Dev Menu", message_lines: int = 5, dev_mode: bool = True)):
             Initializes the menu.
             actions: dict mapping keys to (description, function, args, kwargs)
             title: menu title displayed at the top
@@ -63,18 +66,22 @@ class DevMenu:
             Catches exceptions and shows traceback without breaking the menu.
 
         log(msg: str):
-            Adds a message to the log and displays it at the bottom of the menu.
+            Adds a message to the log and displays it at the bottom of the menu
+            Keeps only the last N log messages (uses collections.deque).
+            Supports developer/user mode (dev_mode flag) to toggle traceback output.
     """
     def __init__(
         self,
         actions: ActionDict,
         title: str = "Dev Menu",
-        message_lines: int = 5
+        message_lines: int = 5,
+        dev_mode: bool = True,
     ):
         self.actions = actions
         self.title = title
         self.message_lines = message_lines
         self.messages: deque[str] = deque(maxlen=message_lines)
+        self.dev_mode = dev_mode
 
     def show_menu(self) -> None:
         print(f"{CURSOR_HOME}{CLEAR_SCREEN}", end="")
@@ -110,7 +117,8 @@ class DevMenu:
             fnc(*args, **kwargs)
         except Exception as e:
             print(f"{RED}Error in {fnc.__name__}: {e}{RESET}")
-            print(traceback.format_exc())
+            if self.dev_mode:
+                print(traceback.format_exc())
         input(f"\n{CYAN}Press Enter to return to menu...{RESET}")
 
     def run(self) -> None:
@@ -126,3 +134,28 @@ class DevMenu:
                 self.log(f"{GREEN}{fnc.__name__} finished.{RESET}")
             else:
                 self.log(f"{RED}Invalid choice. Try again.{RESET}")
+
+
+def select_from_list(items: List, title: str = "Select item") -> Any:
+    """
+    Displays numbered list and returns selected element.
+    """
+    if not items:
+        print(f"\033[1;31mNo items available for selection.\033[0m")
+        return None
+
+    print(f"\n\033[1;36m{title}\033[0m\n")
+    for i, item in enumerate(items, start=1):
+        name = item.name if isinstance(item, Path) else str(item)
+        print(f"{i}. {name}")
+
+    while True:
+        try:
+            choice = input("\n→ Enter number or \"q\" to quit: ")
+            if choice.lower() == "q":
+                return None
+            elif 1 <= int(choice) <= len(items):
+                return items[int(choice) - 1]
+        except ValueError:
+            pass
+        print("\033[1;31mInvalid choice, try again.\033[0m")

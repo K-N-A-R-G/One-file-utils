@@ -2,13 +2,13 @@
 ## Small applications for the daily needs of the developer.
 
 ### _Table of contains_:
-- [_micro-git_](#micro-git)
-- [_halt_](#halt)
-- [_make-tree_](#make_tree)
-- [_devmenu_](#devmenu)
+- [_micro-git_](#micro-git.py)
+- [_halt_](#halt.py)
+- [_make-tree_](#make_tree.py)
+- [_devmenu_](#devmenu.py)
 ---
 
-# micro-git
+# micro-git.py
 
 **A minimalist CLI tool for fast and convenient Git operations**
 
@@ -86,7 +86,7 @@ The script will display a list of changed files with numbers
 - Receive confirmation of a successful commit
 ---
 
-# halt
+# halt.py
 ## Timing and Argument Inspection Module
 
 **`halt`** is a lightweight utility module for measuring the execution time of a function, either by using it as a **decorator** or by calling it **explicitly**. It also provides introspection on the parameters and arguments passed to the function.
@@ -181,7 +181,7 @@ def adder(
 print(adder(13, 22) / adder(0.3, 3.3))
 ```
 ---
-# make_tree
+# make_tree.py
 
 ## Directory Tree Generator & Comparator
 
@@ -220,7 +220,7 @@ python3 make_tree.py [options] [folder]
 
 - Ignored entries are excluded from the output and tree traversal.
 
-# devmenu
+# devmenu.py
 
 `DevMenu` is a lightweight, universal CLI interactive menu system for running functions with arguments.
 Ideal for developer utilities, test consoles, and interactive tools.
@@ -292,4 +292,48 @@ q) Quit
 
 --- Messages ---
 No messages yet
+```
+
+=================================================================
+## Utility Function: select_from_list()
+
+`select_from_list(items: List, title: str = "Select item") -> Any`
+Displays a numbered list of elements and returns the selected one.
+
+## Features
+
+- Accepts any iterable (e.g., list of strings, Paths, or objects).
+
+- Shows a numbered menu with a title in cyan.
+
+- Accepts numeric input to choose an item, or q to cancel.
+
+- Returns the actual object from the list, not its name.
+
+- Highlights errors and invalid input in red.
+
+## Example
+
+```python
+from devmenu import select_from_list
+from pathlib import Path
+
+files = list(Path("Data/sources").glob("*.csv"))
+selected = select_from_list(files, title="Available source files")
+
+if selected:
+    print("You selected:", selected)
+else:
+    print("Selection cancelled.")
+```
+## Output Example
+```
+Select item
+
+1. sales_2023.csv
+2. customers.csv
+3. products.json
+
+→ Enter number or "q" to quit: 2
+You selected: customers.csv
 ```
