@@ -222,14 +222,18 @@ python3 make_tree.py [options] [folder]
 
 # devmenu.py
 
-`DevMenu` is a lightweight, universal CLI interactive menu system for running functions with arguments.
-Ideal for developer utilities, test consoles, and interactive tools.
+## DevMenu — Universal CLI & Programmatic Action Router
+
+`DevMenu` is a lightweight, flexible execution engine that works both as an
+interactive CLI menu **and** as a silent programmatic dispatcher (“auto‑mode”).
+Perfect for developer utilities, analytics runners, ETL pipelines,
+visualizers, or any modular toolset.
 
 ---
 
-## Features
+## Key Features
 
-- Create menu from a dictionary like:
+- Build menus from a simple dictionary:
 
 ```python
 {
@@ -238,13 +242,14 @@ Ideal for developer utilities, test consoles, and interactive tools.
 }
 ```
 
-- Calls functions with arguments when selected.
+- Automatically calls functions with supplied arguments.
+- Temporarily hides the menu while an action runs.
+- Prints exceptions without crashing the menu.
+- Maintains an internal rolling log of messages.
+- Supports **auto‑mode** for silent programmatic execution (no UI, no pauses).
+- Fully framework‑agnostic — can be used with CLI, Tkinter, FastAPI-shell, etc.
 
-- Temporarily hides the menu while the function runs.
-
-- Returns to the menu after function completion or exception.
-
-- Logs the last messages directly in the menu (console output).
+---
 
 ## Usage
 
@@ -266,21 +271,43 @@ menu = DevMenu(actions, title="My Dev Menu")
 menu.run()
 ```
 
-- Selecting a menu item runs the function.
+- Selecting a menu item calls its function.
+- Errors and tracebacks are shown without killing the menu.
+- Quit using `q`.
 
-- Exceptions are caught and printed without breaking the menu.
+---
 
-- Quit the menu by pressing q.
+## Auto‑Mode (Programmatic Use)
 
-## API
+```python
+visual = DevMenu(actions, auto=True)
+visual.do("1")       # runs greet("Alice")
+visual.do("2")       # runs add(3, 5)
+```
 
-| Method                                                 | Description                                                                                     |
-| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `__init__(actions, title="Dev Menu", message_lines=5)` | Initializes the menu. `actions` is a dict mapping keys to (description, function, args, kwargs) |
-| `run()`                                                | Runs the menu main loop                                                                         |
-| `show_menu()`                                          | Displays the current menu and last messages                                                     |
-| `run_action(fnc, args=(), kwargs={})`                  | Runs the function in "full screen" mode                                                         |
-| `log(msg)`                                             | Adds a message to the log and displays it at the bottom of the menu                             |
+In this mode:
+
+- No menu is displayed.
+- No input is required.
+- No pauses like “Press Enter to return…”.
+- Actions run instantly and silently.
+
+This is ideal for **visualizers**, **background tasks**, or **pipeline hooks**.
+
+---
+
+## API Reference
+
+| Method / Attribute                                        | Description                                                                                      |
+| ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `__init__(actions, title="Dev Menu", message_lines=5, dev_mode=True, auto=False)` | Initializes the menu. `actions` maps keys to `(desc, func, args, kwargs)`. `auto=True` enables silent mode. |
+| `run()`                                                    | Starts the interactive menu loop (ignored in auto‑mode).                                          |
+| `show_menu()`                                              | Renders the menu and the message log.                                                            |
+| `run_action(fnc, args=(), kwargs={})`                      | Executes a function in “full screen” mode, catching exceptions.                                  |
+| `log(msg)`                                                 | Adds a message to the bottom log section.                                                        |
+| `do(key)`                                                  | Programmatically runs an action by key (auto‑mode API).                                          |
+
+---
 
 ## Example Output
 
@@ -294,10 +321,24 @@ q) Quit
 No messages yet
 ```
 
+---
+
+## Summary
+
+`DevMenu` provides:
+
+- a universal interactive menu system
+- a silent programmatic dispatcher
+- clean modular integration with any architecture
+- predictable action invocation
+- reusable, framework‑independent logic
+
+Perfect for projects built around modular pipelines or node‑style architectures.
 =================================================================
-## Utility Function: select_from_list()
+## Utility Function: `select_from_list()`
 
 `select_from_list(items: List, title: str = "Select item") -> Any`
+
 Displays a numbered list of elements and returns the selected one.
 
 ## Features

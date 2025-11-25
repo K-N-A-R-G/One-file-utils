@@ -21,54 +21,117 @@ ActionDict = Dict[str, MenuNode]
 
 class DevMenu:
     """
-    DevMenu is a lightweight, universal CLI interactive menu system for running functions with arguments.
-    Ideal for developer utilities, test consoles, and interactive tools.
+    DevMenu — a lightweight, node-style action router for running functions with
+    arguments. It can operate either as an interactive CLI menu or as a fully
+    programmatic dispatcher (auto-mode).
 
-    Features:
-        - Create menu from a dictionary mapping keys to (description, function, args, kwargs).
-        - Calls functions with arguments when selected.
-        - Temporarily hides the menu while the function runs.
-        - Returns to the menu after function completion or exception.
-        - Logs the last messages directly in the menu (console output).
+    ----------------------------------------------------------------------
+    Concept
+    ----------------------------------------------------------------------
+    A DevMenu is built from a dictionary:
 
-    Example usage:
-        from devmenu import DevMenu
+        key -> (description, function, args, kwargs)
 
-        def greet(name: str):
+    In interactive mode, the menu is rendered in the terminal and the user selects
+    actions manually.
+
+    In auto-mode (auto=True), DevMenu does not display anything, does not wait for
+    input, and does not pause execution. It becomes a silent programmable node:
+
+        menu = DevMenu(actions, auto=True)
+        menu.do("plot")    # runs the action directly
+
+    This makes DevMenu reusable in:
+        • visualizers
+        • ETL pipelines
+        • analytics layers
+        • background threads/processes
+        • Tkinter-based systems
+        • automated testing and scripting
+
+    ----------------------------------------------------------------------
+    Modes
+    ----------------------------------------------------------------------
+
+    1) Interactive mode (default)
+       -----------------------------------------
+       menu = DevMenu(actions)
+       menu.run()
+
+       - Renders a full CLI menu
+       - Hides itself while running actions
+       - Displays errors/tracebacks (dev_mode=True)
+       - Waits for “Press Enter to return…”
+       - Maintains a rolling message log
+
+    2) Auto-mode (non-interactive node)
+       -----------------------------------------
+       menu = DevMenu(actions, auto=True)
+       menu.do("key")
+
+       - Does NOT display the menu
+       - Does NOT wait for input
+       - Does NOT pause after actions
+       - Executes run_action() silently
+       - Ideal for programmatic triggers (e.g. visualizer hooks)
+
+    ----------------------------------------------------------------------
+    Example
+    ----------------------------------------------------------------------
+
+        def greet(name):
             print(f"Hello, {name}!")
-
-        def add(a, b):
-            print(f"{a} + {b} = {a + b}")
 
         actions = {
             "1": ("Say Hello", greet, ("Alice",), {}),
-            "2": ("Add numbers", add, (3, 5), {}),
         }
 
-        menu = DevMenu(actions, title="My Dev Menu")
-        menu.run()
+        # Interactive
+        DevMenu(actions, title="Demo").run()
 
-    Methods:
-        __init__(actions: dict, title: str = "Dev Menu", message_lines: int = 5, dev_mode: bool = True)):
-            Initializes the menu.
-            actions: dict mapping keys to (description, function, args, kwargs)
-            title: menu title displayed at the top
-            message_lines: number of messages to show at the bottom of the menu
+        # Programmatic
+        visual = DevMenu(actions, auto=True)
+        visual.do("1")      # runs greet("Alice")
 
-        run():
-            Starts the menu loop.
+    ----------------------------------------------------------------------
+    API
+    ----------------------------------------------------------------------
 
-        show_menu():
-            Displays the current menu and the last messages.
+    __init__(actions, title="Dev Menu", message_lines=5,
+             dev_mode=True, auto=False)
+        Initializes the menu object.
+        If auto=True, the menu behaves as a silent programmable dispatcher.
 
-        run_action(fnc: Callable, args: tuple = (), kwargs: dict = {}):
-            Runs the given function in "full screen" mode, temporarily suspending the menu.
-            Catches exceptions and shows traceback without breaking the menu.
+    run()
+        Starts the interactive loop (ignored in auto-mode).
 
-        log(msg: str):
-            Adds a message to the log and displays it at the bottom of the menu
-            Keeps only the last N log messages (uses collections.deque).
-            Supports developer/user mode (dev_mode flag) to toggle traceback output.
+    do(key)
+        Programmatically execute the action associated with `key`.
+
+    run_action(func, args, kwargs)
+        Executes the function:
+            - clears the screen
+            - prints header
+            - catches and prints exceptions
+            - prints traceback if dev_mode=True
+            - in interactive mode only: waits for Enter
+
+    show_menu()
+        Renders the menu and the message log (interactive mode only).
+
+    log(msg)
+        Adds a message to the rolling log and updates the bottom area.
+
+    ----------------------------------------------------------------------
+    Summary
+    ----------------------------------------------------------------------
+    DevMenu is:
+        ✔ a universal CLI menu
+        ✔ a silent, scriptable action node (auto-mode)
+        ✔ safe to reuse across pipelines, analytics, visualizers
+        ✔ independent from UI frameworks (Tkinter/CLI/etc.)
+        ✔ ideal for modular, plug-and-play architectures
+
     """
     def __init__(
         self,
@@ -76,12 +139,14 @@ class DevMenu:
         title: str = "Dev Menu",
         message_lines: int = 5,
         dev_mode: bool = True,
+        auto: bool = False,
     ):
         self.actions = actions
         self.title = title
         self.message_lines = message_lines
         self.messages: deque[str] = deque(maxlen=message_lines)
         self.dev_mode = dev_mode
+        self.auto = auto
 
     def show_menu(self) -> None:
         print(f"{CURSOR_HOME}{CLEAR_SCREEN}", end="")
@@ -119,9 +184,22 @@ class DevMenu:
             print(f"{RED}Error in {fnc.__name__}: {e}{RESET}")
             if self.dev_mode:
                 print(traceback.format_exc())
-        input(f"\n{CYAN}Press Enter to return to menu...{RESET}")
+        if not self.auto:
+            input(f"\n{CYAN}Press Enter to return to menu...{RESET}")
+
+    def do(self, key: str):
+        """Programmatically execute action by key."""
+        action = self.actions.get(key)
+        if not action:
+            raise KeyError(f"Unknown action '{key}'")
+
+        name, fn, args, kwargs = action
+        self.run_action(fnc, args, kwargs)
 
     def run(self) -> None:
+        if self.auto:
+            return
+
         while True:
             self.show_menu()
             choice = input(f"{BLUE}Choose an option: {RESET}").strip().lower()
@@ -134,7 +212,8 @@ class DevMenu:
                 self.log(f"{GREEN}{fnc.__name__} finished.{RESET}")
             else:
                 self.log(f"{RED}Invalid choice. Try again.{RESET}")
-
+            if not choice:
+                continue
 
 def select_from_list(items: List, title: str = "Select item") -> Any:
     """
