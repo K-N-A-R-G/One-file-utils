@@ -193,7 +193,7 @@ class DevMenu:
         if not action:
             raise KeyError(f"Unknown action '{key}'")
 
-        name, fn, args, kwargs = action
+        name, fnc, args, kwargs = action
         self.run_action(fnc, args, kwargs)
 
     def run(self) -> None:
